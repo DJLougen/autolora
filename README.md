@@ -27,16 +27,19 @@ hermes sessions export            # 1. export the agent's own traces
 Base model: `Qwen/Qwen3.5-4B`. Built around `self_improve_loop.py` (the curation
 cutoff + `SwitchPolicy` + `run_cycle` controller).
 
-## Install (as a Hermes skill)
+## Install (as a local Hermes skill)
+
+autolora reads your `RUNPOD_API_KEY` / `STRIPE_API_KEY` and runs training
+jobs + a model server, so the Hermes **hub scanner blocks it as a community
+install by design** (credential access + subprocess = "dangerous" verdict, which
+`--force` won't override). Install it as a **local, trusted skill** instead —
+clone it into your skills dir:
 
 ```bash
-# direct (owner/repo/skill-dir) — bundles SKILL.md + all code:
-hermes skills install DJLougen/autolora/autolora --yes
-hermes skills list            # shows: autolora
-
-# or add the repo as a tap, then install by name:
-hermes skills tap add DJLougen/autolora
-hermes skills install autolora --yes
+git clone https://github.com/DJLougen/autolora
+cp -r autolora/autolora ~/.hermes/skills/mlops/autolora
+hermes skills reload-skills          # or restart hermes
+hermes skills list                   # shows: autolora (mlops)
 ```
 
 Then just ask Hermes to **"run an improvement cycle."**
