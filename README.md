@@ -30,8 +30,13 @@ cutoff + `SwitchPolicy` + `run_cycle` controller).
 ## Install (as a Hermes skill)
 
 ```bash
-hermes skills install DJLougen/autolora
+# direct (owner/repo/skill-dir) — bundles SKILL.md + all code:
+hermes skills install DJLougen/autolora/autolora --yes
 hermes skills list            # shows: autolora
+
+# or add the repo as a tap, then install by name:
+hermes skills tap add DJLougen/autolora
+hermes skills install autolora --yes
 ```
 
 Then just ask Hermes to **"run an improvement cycle."**
@@ -39,6 +44,7 @@ Then just ask Hermes to **"run an improvement cycle."**
 ## Run directly
 
 ```bash
+git clone https://github.com/DJLougen/autolora && cd autolora/autolora
 python scripts/harvest_report.py   # steps 1-3: export + score + summary + questions
 python scripts/run_cycle.py        # the full cycle
 ```

@@ -1,22 +1,21 @@
-# secrets — MUST stay untracked (Stripe + any creds)
+# secrets — MUST stay untracked
 .env
 .env.*
 **/vault/
 *vault*
-stripe_*.json
 secrets/
 
-# audit log + run artifacts
-swaps.jsonl
-adapters/
-serve/live_adapter/
-serve/active.json
-serve/HANDOFF.md
-data/incumbent_scores.json
-
 # the agent's OWN exported traces — private, never commit
-data/traces_raw/
-data/train_dataset.jsonl
+**/data/traces_raw/
+**/data/train_dataset.jsonl
+**/data/incumbent_scores.json
+
+# audit log + run artifacts
+**/swaps.jsonl
+**/adapters/
+**/serve/live_adapter/
+**/serve/active.json
+**/serve/HANDOFF.md
 
 # python
 __pycache__/
