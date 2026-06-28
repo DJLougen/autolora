@@ -13,9 +13,11 @@ from seams import config, harvest
 
 def main():
     cfg = config.load()
-    print("== harvest: exporting the agent's own traces ==")
-    path = harvest.export()
-    print(f"exported -> {path}\n")
+    src = config.rel(cfg["data"]["traces_raw"])
+    print("== harvest ==")
+    print(f"trace source : {src}  (excluded models: {cfg['data'].get('exclude_models', [])})")
+    dump = harvest.export()                       # refresh the Hermes dump (separate file)
+    print(f"hermes dump  -> {dump}  (not used unless traces_raw points at it)\n")
 
     s = harvest.summarize()
     print("== summary statistics ==")

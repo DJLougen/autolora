@@ -36,6 +36,8 @@ TASK_CATEGORIES = {
 
 def categorize(s: dict) -> str:
     """Bucket a trace by a keyword vote over its user turns."""
+    if s.get("_demo_domain"):
+        return s["_demo_domain"]
     text = " ".join((m.get("content") or "") for m in s.get("messages", [])
                     if m.get("role") == "user").lower()
     best, best_n = "other", 0
@@ -72,7 +74,8 @@ def render_trace(messages: list[dict]) -> str:
 def export(out_path: str | None = None) -> str:
     """Export the agent's sessions to a JSONL folder via the Hermes CLI."""
     cfg = config.load()
-    out_path = out_path or config.rel(cfg["data"]["traces_raw"])
+    out_path = out_path or config.rel(cfg["data"].get("hermes_dump",
+                "./data/traces_raw/sessions.jsonl"))
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     subprocess.run(["hermes", "sessions", "export", out_path],
                    check=True, capture_output=True, text=True)
@@ -103,7 +106,10 @@ def score(s: dict) -> float:
 
 
 def label(s: dict) -> int | None:
-    """Binary good/bad for the calibration subset; None = unclear (excluded)."""
+    """Binary good/bad for calibration. Prefer an explicit variant tag; else heuristic."""
+    v = (s.get("_demo_variant") or "").lower()
+    if v:
+        return 1 if v == "good" else (0 if v == "bad" else None)
     msgs = s.get("messages", [])
     issued = sum(len(m.get("tool_calls") or []) for m in msgs
                  if m.get("role") == "assistant")
@@ -123,7 +129,9 @@ def _sessions() -> list[dict]:
     path = config.rel(cfg["data"]["traces_raw"])
     if not os.path.exists(path):
         export(path)
-    return _read(path)
+    excl = set((cfg.get("data") or {}).get("exclude_models", []))
+    rows = _read(path)
+    return [r for r in rows if (r.get("model") or "") not in excl]
 
 
 def harvest_traces() -> list[Trace]:

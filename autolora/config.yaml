@@ -6,8 +6,12 @@
 base_model: Qwen/Qwen3.5-4B
 
 data:
-  traces_raw: ./data/traces_raw/sessions.jsonl   # `hermes sessions export` dump
+  # the agent's OWN traces — drop your today-generated JSONL here (Hermes session
+  # schema). `hermes sessions export` works too; vetoes below prune contamination.
+  traces_raw: ./data/traces_raw/today.jsonl
   dataset:    ./data/train_dataset.jsonl         # curated SFT set sent to RunPod
+  hermes_dump: ./data/traces_raw/sessions.jsonl  # `hermes sessions export` target
+  exclude_models: ["hermes-4-70b"]               # models you didn't use / want vetod
 
 curation:
   scorer: youden                  # swappable: youden | keep_all
