@@ -1,10 +1,6 @@
 ---
 name: autolora
-description: Export the agent's own Hermes traces, score and curate them by an
-  AUC/Youden cutoff, fine-tune a LoRA candidate on RunPod with Unsloth (paid via
-  Stripe, under a cap), push it to the HF Hub, eval it on the user's benchmarks,
-  and hot-swap it in if it clears the user's thresholds — restarting onto the new
-  server with a handoff note. Logs every swap.
+description: Fine-tune a new self on your own traces and hot-swap it in.
 ---
 
 When the user asks to "run an improvement cycle" (or on the scheduled cron):
