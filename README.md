@@ -30,7 +30,7 @@ cutoff + `SwitchPolicy` + `run_cycle` controller).
 ## Install (as a Hermes skill)
 
 ```bash
-hermes skills install <github-user>/autolora
+hermes skills install DJLougen/autolora
 hermes skills list            # shows: autolora
 ```
 
