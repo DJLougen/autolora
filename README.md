@@ -37,10 +37,19 @@ clone it into your skills dir:
 
 ```bash
 git clone https://github.com/DJLougen/autolora
-cp -r autolora/autolora ~/.hermes/skills/mlops/autolora
-hermes skills reload-skills          # or restart hermes
-hermes skills list                   # shows: autolora (mlops)
+
+# find your Hermes skills dir (platform-specific):
+#   Linux/macOS : ~/.hermes/skills
+#   Windows     : %LOCALAPPDATA%\hermes\skills
+python -c "from tools.skills_tool import SKILLS_DIR; print(SKILLS_DIR)"
+
+# copy the skill into <that dir>/mlops/autolora, e.g. on Windows:
+cp -r autolora/autolora "$LOCALAPPDATA/hermes/skills/mlops/autolora"
+
+hermes skills list                   # shows: autolora  mlops  local  enabled
 ```
+
+> Requires Hermes's `concurrent-log-handler` dep — `pip install concurrent-log-handler` if agent init complains.
 
 Then just ask Hermes to **"run an improvement cycle."**
 
