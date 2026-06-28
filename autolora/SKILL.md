@@ -1,6 +1,10 @@
 ---
 name: autolora
 description: Fine-tune a new self on your own traces and hot-swap it in.
+version: 1.0.0
+author: DJLougen
+license: Apache-2.0
+tags: [self-improvement, lora, finetuning, runpod, unsloth, stripe, mlops]
 ---
 
 When the user asks to "run an improvement cycle" (or on the scheduled cron):
