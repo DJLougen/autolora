@@ -1,0 +1,55 @@
+# Self-improve loop config. User knobs: `curation.scorer`, `benchmarks`
+# (the SwitchPolicy), and `eval.benchmarks`. Everything else is plumbing.
+# Credentials (RUNPOD_API_KEY, STRIPE_API_KEY, HF_TOKEN) load from env / .env at
+# run time — set them later to fire the paid steps.
+
+base_model: Qwen/Qwen3.5-4B
+
+data:
+  traces_raw: ./data/traces_raw/sessions.jsonl   # `hermes sessions export` dump
+  dataset:    ./data/train_dataset.jsonl         # curated SFT set sent to RunPod
+
+curation:
+  scorer: youden                  # swappable: youden | keep_all
+
+train:
+  provider: runpod                # runpod | local
+  engine: unsloth                 # fast LoRA on the pod
+  gpu: "NVIDIA GeForce RTX 4090"  # runpod gpu type
+  image: "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.0
+  epochs: 2
+  lr: 2.0e-4
+  max_seq_len: 2048
+  max_train_samples: 500
+
+hf:
+  adapter_repo: CHANGEME/hermes-self-improve-lora  # push target (set your namespace)
+  private: true
+  gguf: false                     # convert merged model to GGUF after training
+  gguf_quant: q4_k_m
+
+eval:
+  limit: 100                      # questions per benchmark
+
+# SwitchPolicy + the benchmarks to run. Keys = user-defined benchmarks (defaults
+# below). Values = promotion thresholds. This is the main user knob.
+benchmarks:
+  gsm8k: {min_delta: 0.01}                   # candidate must gain >= 1 pt
+  arc:   {max_regression: 0.01, guard: true} # may not drop > 1 pt on ARC-Easy
+
+serving:
+  backend: vllm
+  endpoint: http://127.0.0.1:8000/v1
+  active_pointer: ./serve/active.json
+  restart_agent: true             # bounce Hermes onto the new endpoint after swap
+
+payment:
+  enabled: true
+  provider: stripe
+  spend_cap_usd: 25.00
+  description: "RunPod GPU for self-improve LoRA cycle"
+
+log_path: ./swaps.jsonl

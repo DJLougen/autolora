@@ -1,0 +1,25 @@
+# secrets — MUST stay untracked (Stripe + any creds)
+.env
+.env.*
+**/vault/
+*vault*
+stripe_*.json
+secrets/
+
+# audit log + run artifacts
+swaps.jsonl
+adapters/
+serve/live_adapter/
+serve/active.json
+serve/HANDOFF.md
+data/incumbent_scores.json
+
+# the agent's OWN exported traces — private, never commit
+data/traces_raw/
+data/train_dataset.jsonl
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
