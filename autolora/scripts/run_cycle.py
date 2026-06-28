@@ -31,12 +31,18 @@ def main():
     print(f"Youden cutoff {s['cutoff']:.3f} | kept {s['kept']}/{s['of']} "
           f"({s['kept_frac']*100:.1f}%)")
 
-    rules = {b: BenchRule(**v) for b, v in cfg["benchmarks"].items()}
-    policy = SwitchPolicy(rules)
-    print(f"SwitchPolicy: {cfg['benchmarks']}")
-
     banner("STEP 4  measure incumbent (base) on benchmarks")
     incumbent = evaluate.eval_on_benchmarks(None)
+
+    # gate only on benchmarks that actually produced a score (e.g. terminal_bench
+    # is dropped when its tmax/Harbor infra is absent)
+    rules = {b: BenchRule(**v) for b, v in cfg["benchmarks"].items()
+             if b in incumbent}
+    dropped = [b for b in cfg["benchmarks"] if b not in incumbent]
+    if dropped:
+        print(f"[policy] no score for {dropped} this run -> dropped from gate")
+    policy = SwitchPolicy(rules)
+    print(f"SwitchPolicy: {{{', '.join(rules)}}}")
 
     shared = {}
 

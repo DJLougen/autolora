@@ -36,8 +36,12 @@ eval:
 
 # SwitchPolicy + the benchmarks to run. Keys = user-defined benchmarks (defaults
 # below). Values = promotion thresholds. This is the main user knob.
+# `terminal_bench` is the agentic gate (tmax / Harbor); it auto-skips and is
+# dropped from the policy when its infra (harbor + sandbox + served endpoint) is
+# absent, so gsm8k/arc still gate the run.
 benchmarks:
-  gsm8k: {min_delta: 0.01}                   # candidate must gain >= 1 pt
+  terminal_bench: {min_delta: 0.02}          # tmax Terminal-Bench pass-rate gain
+  gsm8k: {min_delta: 0.01}                    # candidate must gain >= 1 pt
   arc:   {max_regression: 0.01, guard: true} # may not drop > 1 pt on ARC-Easy
 
 serving:
@@ -45,6 +49,19 @@ serving:
   endpoint: http://127.0.0.1:8000/v1
   active_pointer: ./serve/active.json
   restart_agent: true             # bounce Hermes onto the new endpoint after swap
+
+# tmax (github.com/hamishivi/tmax) — terminal-agent eval via Harbor.
+# Powers the `terminal_bench` benchmark above. Needs: `harbor` (or `uv`), a
+# sandbox (Docker locally or DAYTONA_API_KEY), and the candidate served at
+# serving.endpoint. Absent -> the benchmark skips cleanly.
+tmax:
+  enabled: true
+  dataset: "tmax/TMax-15K-Harbor@latest"   # or "terminal-bench@2.0"
+  agent: "Vanillux2Agent:Vanillux2Agent"   # tmax's agent; falls back to terminus-2
+  env: daytona                              # docker | daytona
+  limit: 10                                 # tasks to run
+  k: 1                                      # attempts per task (pass@k)
+  served_name: autolora-cand               # --served-model-name of the candidate
 
 payment:
   enabled: true

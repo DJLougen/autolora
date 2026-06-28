@@ -16,7 +16,7 @@ hermes sessions export            # 1. export the agent's own traces
   -> [Stripe pay, under cap]       # 4. pay for GPU compute
   -> RunPod + Unsloth LoRA train   # 5. fine-tune a candidate on the kept traces
   -> push adapter to HF -> pull    # 6. ship it to the Hub, pull it back
-  -> eval candidate vs incumbent   # 7. gsm8k + arc (your benchmarks)
+  -> eval candidate vs incumbent   # 7. tmax Terminal-Bench (agentic) + gsm8k + arc
   -> SwitchPolicy (your thresholds)# 8. promote only if it clears the bar
        pass -> (optional GGUF) -> kill old server, start new one,
                reboot agent with serve/HANDOFF.md as context
@@ -76,6 +76,28 @@ down the live session.
 | HF push / pull-back | `hf.adapter_repo` in `config.yaml` (`HF_TOKEN` for push) |
 | GGUF export after training | `hf.gguf: true` |
 | Actually fire the kill/restart | `HERMES_LIVE_SWAP=1` |
+| Agentic gate: tmax Terminal-Bench | `harbor`/`uv` + sandbox (Docker or `DAYTONA_API_KEY`) + served candidate |
+
+## Agentic eval — tmax integration
+
+autolora improves a *tool-using* agent, so the headline promotion gate is a real
+terminal-agent benchmark, not just gsm8k. The `terminal_bench` benchmark runs
+[**tmax**](https://github.com/hamishivi/tmax)'s published Harbor corpus
+(`tmax/TMax-15K-Harbor`) against the **served candidate** using tmax's
+`Vanillux2Agent` (falling back to Harbor's `terminus-2`), and scores the pass
+rate. Configure it under `tmax:` in `config.yaml`.
+
+It's gated like every other infra step: without `harbor` + a sandbox
+(Docker or `DAYTONA_API_KEY`) + a served endpoint, `terminal_bench` **skips
+cleanly and is dropped from the SwitchPolicy** for that run (gsm8k/arc still
+gate) — never faked. To enable it:
+
+```bash
+git clone https://github.com/hamishivi/tmax && (cd tmax && uv sync)  # harbor + Vanillux2Agent
+export DAYTONA_API_KEY=...        # or set tmax.env: docker
+# serve the candidate so Harbor can hit it:
+vllm serve <base> --enable-lora --lora-modules cand=<adapter> --served-model-name autolora-cand --port 8000
+```
 
 ## The two knobs that matter (`config.yaml`)
 
@@ -83,7 +105,8 @@ down the live session.
 curation:
   scorer: youden          # AUC/Youden cutoff, swappable
 benchmarks:               # the SwitchPolicy — your promotion bar
-  gsm8k: {min_delta: 0.01}                    # must gain >= 1 pt
+  terminal_bench: {min_delta: 0.02}           # tmax agentic gate (skips w/o infra)
+  gsm8k: {min_delta: 0.01}                     # must gain >= 1 pt
   arc:   {max_regression: 0.01, guard: true}  # may not drop > 1 pt
 ```
 
@@ -92,7 +115,7 @@ benchmarks:               # the SwitchPolicy — your promotion bar
 ```
 SKILL.md                     the Hermes skill manifest
 self_improve_loop.py         controller: Youden curation + SwitchPolicy + run_cycle
-seams/                       harvest · train · evaluate · serving · payment · config
+seams/                       harvest · train · evaluate · serving · payment · tmax_eval · config
 runpod/train_unsloth.py      remote Unsloth trainer (runs on the pod)
 scripts/                     harvest_report.py · run_cycle.py
 docs/                        design notes (GOAL.md, build plan)

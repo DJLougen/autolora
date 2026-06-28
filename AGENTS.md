@@ -48,7 +48,10 @@ the kill/restart — off by default so demos don't kill the session).
 - `harvest.harvest_traces() -> list[Trace]` — Trace(id, quality)
 - `harvest.label_calibration() -> list[Trace]` — labeled subset for Youden
 - `train.train_lora(kept) -> adapter_ref` — RunPod+Unsloth (key) or local fallback
-- `evaluate.eval_on_benchmarks(adapter|None) -> {bench: score}`
+- `evaluate.eval_on_benchmarks(adapter|None) -> {bench: score}` — gsm8k/arc
+  in-process; `terminal_bench` delegates to `tmax_eval.terminal_bench`
+- `tmax_eval.terminal_bench(adapter, served_base) -> pass_rate | None` — tmax
+  Terminal-Bench via Harbor; returns None (skipped) without infra
 - `serving.swap(adapter, ctx) -> dict` — handoff md + staged kill/restart
 - curation/`SwitchPolicy`/`run_cycle` live in `self_improve_loop.py`
 
@@ -82,6 +85,11 @@ the kill/restart — off by default so demos don't kill the session).
   `datasets` build — use `arc` (ARC-Easy) as the guard; `gsm8k` works.
 - `trl` is too old for `transformers` 5.x locally -> the local fallback trainer
   hand-rolls peft + `Trainer`. The RunPod path uses Unsloth.
+- **tmax `terminal_bench`** (`seams/tmax_eval.py`) needs `harbor` (or `uv`), a
+  sandbox (Docker or `DAYTONA_API_KEY`), AND the candidate served at
+  `serving.endpoint`. Absent -> returns None, the bench is dropped from the
+  SwitchPolicy that run (gsm8k/arc still gate). Install tmax separately
+  (github.com/hamishivi/tmax, `uv sync`); we don't vendor it.
 
 ## After changing skill code
 Re-sync the installed copy so Hermes picks it up:

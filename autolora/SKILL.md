@@ -22,8 +22,10 @@ When the user asks to "run an improvement cycle" (or on the scheduled cron):
    compute via Stripe **under the cap** (surface the charge), launch a RunPod pod
    running Unsloth (`runpod/train_unsloth.py`) on the curated traces, and push the
    adapter to the HF Hub.
-4. **Eval.** Pull the adapter back and eval candidate vs incumbent on the user's
-   benchmarks (defaults: gsm8k + arc).
+4. **Eval.** Pull the adapter back and eval candidate vs incumbent. The headline
+   gate is `terminal_bench` — tmax's Terminal-Bench (Harbor) run against the
+   served candidate, the real agentic benchmark — plus gsm8k + arc. `terminal_bench`
+   auto-skips (and drops from the gate) when its infra is absent.
 5. **Decide (SwitchPolicy).**
    - pass -> pull adapter, (optional GGUF), write `serve/HANDOFF.md`, then run the
      swap command that kills the old server, starts the new one, and reboots the

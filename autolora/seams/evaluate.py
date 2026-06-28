@@ -76,18 +76,33 @@ def eval_on_benchmarks(adapter: str | None) -> dict:
     benches = list(cfg["benchmarks"].keys())
     tag = adapter or "base"
     print(f"[eval] {tag}: {benches} (limit {limit}/bench)")
-    tok, model = _load(adapter)
     fns = {"gsm8k": _gsm8k, "arc": _arc}
     scores = {}
-    for b in benches:
-        if b not in fns:
-            print(f"[eval] no runner for '{b}', skipping"); continue
+
+    # in-process generative benches (need the model loaded once)
+    inproc = [b for b in benches if b in fns]
+    tok = model = None
+    if inproc:
+        tok, model = _load(adapter)
+    for b in inproc:
         try:
             scores[b] = fns[b](tok, model, limit)
         except Exception as e:  # keep the cycle alive if one bench can't load
             print(f"[eval] '{b}' failed: {repr(e)[:100]}; skipping")
-    del model
-    import torch, gc
-    gc.collect(); torch.cuda.empty_cache()
+    if model is not None:
+        del model
+        import torch, gc
+        gc.collect(); torch.cuda.empty_cache()
+
+    # agentic gate: tmax Terminal-Bench against the served candidate
+    if "terminal_bench" in benches:
+        from seams import tmax_eval
+        sc = tmax_eval.terminal_bench(adapter, cfg["serving"]["endpoint"])
+        if sc is not None:               # omit when skipped -> dropped from policy
+            scores["terminal_bench"] = sc
+
+    for b in benches:
+        if b not in fns and b != "terminal_bench":
+            print(f"[eval] no runner for '{b}', skipping")
     print(f"[eval] {tag} scores: {scores}")
     return scores
