@@ -29,6 +29,17 @@ def main():
           f"p90 {q['p90']}  max {q['max']}")
     print(f"AUC/Youden cutoff  : {s['cutoff']:.3f}")
     print(f"kept after curation: {s['kept']}/{s['of']}  ({s['kept_frac']*100:.1f}%)\n")
+    print("== by model (provenance: who created the traces) ==")
+    for m, d in s["by_model"].items():
+        print(f"  {m:<24} n={d['n']:<3} kept={d['kept']:<3} "
+              f"({d['kept_frac']*100:4.0f}%)  mean_q={d['mean_q']}")
+    print()
+    print("== by task category (with per-category AUC cutoff) ==")
+    for c, d in s["by_category"].items():
+        print(f"  {c:<10} n={d['n']:<3} kept={d['kept']:<3} "
+              f"({d['kept_frac']*100:4.0f}%)  mean_q={d['mean_q']}  "
+              f"cutoff={d['cutoff']}")
+    print()
 
     print("== questions for the user (defaults from config.yaml) ==")
     print(f"1. Benchmarks to gate on? default: {list(cfg['benchmarks'])}")

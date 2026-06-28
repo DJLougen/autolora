@@ -15,11 +15,13 @@ import time
 from self_improve_loop import Trace
 from seams import config, harvest, payment
 
-ROLES = {"system", "user", "assistant"}
-
-
 def build_dataset(kept: list[Trace]) -> tuple[str, int]:
-    """Turn kept sessions into an SFT chat dataset (one JSON per line)."""
+    """Turn kept sessions into a RAW SFT dataset (one JSON per line).
+
+    Each row keeps the full raw message trajectory (tool calls + results), the
+    model that produced it, the task category, and the quality score — plus a
+    faithful rendered transcript for training.
+    """
     cfg = config.load()
     recs = harvest.load_records()
     out = config.rel(cfg["data"]["dataset"])
@@ -30,12 +32,19 @@ def build_dataset(kept: list[Trace]) -> tuple[str, int]:
             s = recs.get(t.id)
             if not s:
                 continue
-            msgs = [{"role": m["role"], "content": m["content"]}
-                    for m in s.get("messages", [])
-                    if m.get("role") in ROLES and (m.get("content") or "").strip()]
-            if len(msgs) >= 2:
-                f.write(json.dumps({"messages": msgs}) + "\n")
-                n += 1
+            raw = s.get("messages", [])
+            text = harvest.render_trace(raw)
+            if not text.strip() or len(raw) < 2:
+                continue
+            f.write(json.dumps({
+                "id": t.id,
+                "model": harvest.model_of(s),       # provenance: who made this trace
+                "category": harvest.categorize(s),  # task bucket
+                "quality": t.quality,
+                "messages": raw,                    # the RAW trajectory, untrimmed
+                "text": text,                       # faithful transcript for SFT
+            }, ensure_ascii=False) + "\n")
+            n += 1
     return out, n
 
 
@@ -95,7 +104,8 @@ def _train_local(cfg: dict, dataset: str, max_steps: int = 10) -> str:
         bias="none", task_type="CAUSAL_LM", target_modules=targets))
 
     def tok_fn(ex):
-        text = tok.apply_chat_template(ex["messages"], tokenize=False)
+        # train on the RAW rendered trajectory (tool calls + results preserved)
+        text = ex.get("text") or harvest.render_trace(ex.get("messages", []))
         e = tok(text, truncation=True, max_length=tc["max_seq_len"])
         e["labels"] = e["input_ids"].copy()
         return e

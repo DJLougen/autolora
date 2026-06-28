@@ -13,9 +13,11 @@ When the user asks to "run an improvement cycle" (or on the scheduled cron):
    sessions (`hermes sessions export`), scores each trace, fits the Youden cutoff
    on the labeled calibration subset, and prints summary statistics.
 2. **Inform + ask.** Show the user: sessions/messages/tool-calls, the quality
-   distribution, the AUC/Youden cutoff, and the kept fraction. Then ask the open
-   questions (benchmarks to gate on, promotion thresholds, RunPod spend cap, HF
-   push target, GGUF yes/no). Defaults live in `config.yaml`.
+   distribution, the AUC/Youden cutoff and kept fraction, the breakdown **by
+   model that produced the traces** (provenance), and **by task category** (with
+   a per-category AUC cutoff). Then ask the open questions (benchmarks to gate on,
+   promotion thresholds, RunPod spend cap, HF push target, GGUF yes/no). Defaults
+   live in `config.yaml`.
 3. **Pay + train.** `python scripts/run_cycle.py` runs the rest: charge the GPU
    compute via Stripe **under the cap** (surface the charge), launch a RunPod pod
    running Unsloth (`runpod/train_unsloth.py`) on the curated traces, and push the
